@@ -3,8 +3,6 @@ package gold
 import (
 	"log"
 	"net/http"
-
-	"github.com/Azure/azure-sdk-for-go/services/web/mgmt/2021-01-15/web"
 )
 
 type HandlerFunc func(w http.ResponseWriter, r *http.Request)
@@ -12,26 +10,10 @@ type HandlerFunc func(w http.ResponseWriter, r *http.Request)
 type routerGroup struct {
 	name             string
 	handlerFuncMap   map[string]HandlerFunc
-	handlerMethodMap map[string][]string
 }
 
 func (rg *routerGroup) Add(name string, handlerFunc HandlerFunc) {
 	rg.handlerFuncMap[name] = handlerFunc
-}
-
-func (rg *routerGroup) Any(name string, handlerFunc HandlerFunc) {
-	rg.handlerFuncMap[name] = handlerFunc
-	rg.handlerMethodMap["ANY"] = append(rg.handlerMethodMap["ANY"], name)
-}
-
-func (rg *routerGroup) Get(name string, handlerFunc HandlerFunc) {
-	rg.handlerFuncMap[name] = handlerFunc
-	rg.handlerMethodMap[http.MethodGet] = append(rg.handlerMethodMap[http.MethodGet], name)
-}
-
-func (rg *routerGroup) Post(name string, handlerFunc HandlerFunc) {
-	rg.handlerFuncMap[name] = handlerFunc
-	rg.handlerMethodMap[http.MethodPost] = append(rg.handlerMethodMap[http.MethodPost], name)
 }
 
 type router struct {
@@ -68,15 +50,7 @@ func New() *Engine {
 	}
 }
 
-func (e *Engine) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	method := r.Method
-	for _, group := range e.routerGroups {
-		for name, methodH
-	}
-}
-
 func (e *Engine) Run() {
-	http.Handle("/", e)
 	for _, rg := range e.routerGroups {
 		for k, v := range rg.handlerFuncMap {
 			if rg.name == "" {

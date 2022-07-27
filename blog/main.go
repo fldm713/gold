@@ -9,12 +9,15 @@ import (
 
 func main() {
 	engine := gold.New()
-	engine.Add("/hello", func(w http.ResponseWriter, r *http.Request) {
+	engine.Any("/hello", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "Welcome to the golden era!\n")
 	})
 	userGroup := engine.Group("user")
-	userGroup.Add("/hello", func(w http.ResponseWriter, r *http.Request) {
+	userGroup.Get("/hello", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "Hi user, welcome to the golden era!\n")
+	})
+	userGroup.Post("/info", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, "Hi user, here is the info you need!\n")
 	})
 	engine.Run()
 }

@@ -1,10 +1,9 @@
 package gold
 
 import (
+	"fmt"
 	"log"
 	"net/http"
-
-	"github.com/Azure/azure-sdk-for-go/services/web/mgmt/2021-01-15/web"
 )
 
 type HandlerFunc func(w http.ResponseWriter, r *http.Request)
@@ -13,10 +12,6 @@ type routerGroup struct {
 	name             string
 	handlerFuncMap   map[string]HandlerFunc
 	handlerMethodMap map[string][]string
-}
-
-func (rg *routerGroup) Add(name string, handlerFunc HandlerFunc) {
-	rg.handlerFuncMap[name] = handlerFunc
 }
 
 func (rg *routerGroup) Any(name string, handlerFunc HandlerFunc) {
@@ -40,15 +35,36 @@ type router struct {
 
 func (r *router) Group(name string) *routerGroup {
 	routerGroup := &routerGroup{
-		name:           name,
-		handlerFuncMap: make(map[string]HandlerFunc),
+		name:             name,
+		handlerFuncMap:   make(map[string]HandlerFunc),
+		handlerMethodMap: make(map[string][]string),
 	}
 	r.routerGroups = append(r.routerGroups, routerGroup)
 	return routerGroup
 }
 
-func (r *router) Add(name string, handlerFunc HandlerFunc) {
-	r.routerGroups[0].Add(name, handlerFunc)
+func (r *router) Any(name string, handlerFunc HandlerFunc) {
+	if len(r.routerGroups) > 0 && r.routerGroups[0].name == "" {
+		r.routerGroups[0].Get(name, handlerFunc)
+	} else {
+		log.Fatal("Root group not initialized")
+	}
+}
+
+func (r *router) Get(name string, handlerFunc HandlerFunc) {
+	if len(r.routerGroups) > 0 && r.routerGroups[0].name == "" {
+		r.routerGroups[0].Get(name, handlerFunc)
+	} else {
+		log.Fatal("Root group not initialized")
+	}
+}
+
+func (r *router) Post(name string, handlerFunc HandlerFunc) {
+	if len(r.routerGroups) > 0 && r.routerGroups[0].name == "" {
+		r.routerGroups[0].Get(name, handlerFunc)
+	} else {
+		log.Fatal("Root group not initialized")
+	}
 }
 
 type Engine struct {
@@ -60,8 +76,9 @@ func New() *Engine {
 		router: router{
 			routerGroups: []*routerGroup{
 				{
-					name:           "",
-					handlerFuncMap: make(map[string]HandlerFunc),
+					name:             "",
+					handlerFuncMap:   make(map[string]HandlerFunc),
+					handlerMethodMap: make(map[string][]string),
 				},
 			},
 		},
@@ -70,22 +87,45 @@ func New() *Engine {
 
 func (e *Engine) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	method := r.Method
-	for _, group := range e.routerGroups {
-		for name, methodH
+	for _, rg := range e.routerGroups {
+		for route, handlerFunc := range rg.handlerFuncMap {
+			var uri string
+			if rg.name == "" {
+				uri = route
+			} else {
+				uri = "/" + rg.name + route
+			}
+			if r.RequestURI == uri {
+				names, ok := rg.handlerMethodMap["ANY"]
+				if ok {
+					for _, name := range names {
+						if name == route {
+							handlerFunc(w, r)
+							return
+						}
+					}
+				}
+				names, ok = rg.handlerMethodMap[method]
+				if ok {
+					for _, name := range names {
+						if name == route {
+							handlerFunc(w, r)
+							return
+						}
+					}
+				}
+				w.WriteHeader(http.StatusMethodNotAllowed)
+				fmt.Fprintf(w, uri+" "+method+" is not allowed\n")
+				return
+			}
+		}
 	}
+	w.WriteHeader(http.StatusNotFound)
+	fmt.Fprintf(w, r.RequestURI+" is not found\n")
 }
 
 func (e *Engine) Run() {
 	http.Handle("/", e)
-	for _, rg := range e.routerGroups {
-		for k, v := range rg.handlerFuncMap {
-			if rg.name == "" {
-				http.HandleFunc(k, v)
-			} else {
-				http.HandleFunc("/"+rg.name+k, v)
-			}
-		}
-	}
 	err := http.ListenAndServe(":8881", nil)
 	if err != nil {
 		log.Fatal(err)

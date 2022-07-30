@@ -9,8 +9,11 @@ import (
 
 func main() {
 	engine := gold.New()
-	engine.Any("/hello", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "Welcome to the golden era!\n")
+	engine.Get("/hello", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, "Get: Welcome to the golden era!\n")
+	})
+	engine.Post("/hello", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, "Post: Welcome to the golden era!\n")
 	})
 	userGroup := engine.Group("user")
 	userGroup.Get("/hello", func(w http.ResponseWriter, r *http.Request) {
@@ -18,6 +21,12 @@ func main() {
 	})
 	userGroup.Post("/info", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "Hi user, here is the info you need!\n")
+	})
+	engine.Any("/any", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, "ANY: Welcome to the golden nation!\n")
+	})
+	engine.Post("/any", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, "Post: Welcome to the golden nation!\n")
 	})
 	engine.Run()
 }

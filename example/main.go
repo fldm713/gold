@@ -9,6 +9,9 @@ import (
 
 func main() {
 	engine := gold.New()
+	engine.Get("/", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, "Root: Welcome to the golden era!\n")
+	})
 	engine.Get("/hello", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "Get: Welcome to the golden era!\n")
 	})

@@ -12,25 +12,26 @@ func main() {
 	engine.Get("/", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "Root: Welcome to the golden era!\n")
 	})
+	engine.Get("/*", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, "Match all: Welcome to the golden era!\n")
+	})
+	engine.Get("/:param", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, "Param: Welcome to the golden era!\n")
+	})
 	engine.Get("/hello", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "Get: Welcome to the golden era!\n")
+		fmt.Fprintf(w, "Static: Welcome to the golden era!\n")
 	})
-	engine.Post("/hello", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "Post: Welcome to the golden era!\n")
+	userGroup := engine.Group("users")
+	userGroup.Get("/:*", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, "Match all: Hi user, welcome to the golden era!\n")
 	})
-	userGroup := engine.Group("user")
-	userGroup.Get("/hello", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "Hi user, welcome to the golden era!\n")
+	userGroup.Get("/:id", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, "Param: Hi user, welcome to the golden era!\n")
 	})
-	userGroup.Post("/info", func(w http.ResponseWriter, r *http.Request) {
+	userGroup.Get("/:id/info", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "Hi user, here is the info you need!\n")
 	})
-	engine.Any("/any", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "ANY: Welcome to the golden nation!\n")
-	})
-	engine.Post("/any", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "Post: Welcome to the golden nation!\n")
-	})
-	
+
 	engine.Run()
+
 }

@@ -11,24 +11,26 @@ const ANY string = "ANY"
 type HandlerFunc func(w http.ResponseWriter, r *http.Request)
 
 type routerGroup struct {
-	name             string
-	handlerFuncMap   map[string]map[string]HandlerFunc
+	name           string
+	handlerFuncMap map[string]map[string]HandlerFunc
+	trieNode       *trieNode
 }
 
 func (rg *routerGroup) Add(routeName string, method string, handlerFunc HandlerFunc) {
-	if _, ok := rg.handlerFuncMap[routeName]; !ok {
-		rg.handlerFuncMap[routeName] = make(map[string]HandlerFunc)
-	}
-	var uri string
+	var uriPattern string
 	if rg.name == "" {
-		uri = routeName
+		uriPattern = routeName
 	} else {
-		uri = "/" + rg.name + routeName
+		uriPattern = "/" + rg.name + routeName
 	}
-	if _, ok := rg.handlerFuncMap[routeName][method]; ok {
-		log.Fatalf("Repeated, uri: %s, method: %s\n", uri + routeName, ANY)
+	if _, ok := rg.handlerFuncMap[uriPattern]; !ok {
+		rg.handlerFuncMap[uriPattern] = make(map[string]HandlerFunc)
 	}
-	rg.handlerFuncMap[routeName][method] = handlerFunc
+	if _, ok := rg.handlerFuncMap[uriPattern][method]; ok {
+		log.Fatalf("Repeated, uri %s, method: %s\n", uriPattern, method)
+	}
+	rg.handlerFuncMap[uriPattern][method] = handlerFunc
+	rg.trieNode.Insert(uriPattern)
 }
 
 func (rg *routerGroup) Any(routeName string, handlerFunc HandlerFunc) {
@@ -49,8 +51,9 @@ type router struct {
 
 func (r *router) Group(name string) *routerGroup {
 	routerGroup := &routerGroup{
-		name:             name,
-		handlerFuncMap:   make(map[string]map[string]HandlerFunc),
+		name:           name,
+		handlerFuncMap: make(map[string]map[string]HandlerFunc),
+		trieNode:       &trieNode{name: "", children: make([]*trieNode, 0), pattern: ""},
 	}
 	r.routerGroups = append(r.routerGroups, routerGroup)
 	return routerGroup
@@ -89,8 +92,9 @@ func New() *Engine {
 		router: router{
 			routerGroups: []*routerGroup{
 				{
-					name:             "",
-					handlerFuncMap:   make(map[string]map[string]HandlerFunc),
+					name:           "",
+					handlerFuncMap: make(map[string]map[string]HandlerFunc),
+					trieNode:       &trieNode{name: "", children: make([]*trieNode, 0), pattern: ""},
 				},
 			},
 		},
@@ -100,28 +104,21 @@ func New() *Engine {
 func (e *Engine) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	method := r.Method
 	for _, rg := range e.routerGroups {
-		for routeName, methodMap := range rg.handlerFuncMap {
-			var uri string
-			if rg.name == "" {
-				uri = routeName
-			} else {
-				uri = "/" + rg.name + routeName
-			}
-			if r.RequestURI == uri {
-				handlerFunc, ok := methodMap[ANY]
-				if ok {
-					handlerFunc(w, r)
-					return
-				}
-				handlerFunc, ok = methodMap[method]
-				if ok {
-					handlerFunc(w, r)
-					return
-				}
-				w.WriteHeader(http.StatusMethodNotAllowed)
-				fmt.Fprintf(w, uri+" "+method+" is not allowed\n")
+		node, uriPattern := rg.trieNode.Find(r.RequestURI)
+		if node != nil {
+			handlerFunc, ok := rg.handlerFuncMap[uriPattern][ANY]
+			if ok {
+				handlerFunc(w, r)
 				return
 			}
+			handlerFunc, ok = rg.handlerFuncMap[uriPattern][method]
+			if ok {
+				handlerFunc(w, r)
+				return
+			}
+			w.WriteHeader(http.StatusMethodNotAllowed)
+			fmt.Fprintf(w, r.RequestURI+" "+method+" is not allowed\n")
+			return	
 		}
 	}
 	w.WriteHeader(http.StatusNotFound)

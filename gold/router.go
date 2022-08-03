@@ -1,6 +1,9 @@
 package gold
 
-import "log"
+import (
+	"log"
+	"net/http"
+)
 
 type router struct {
 	routerGroups []*routerGroup
@@ -14,6 +17,22 @@ func (r *router) Group(name string) *routerGroup {
 	}
 	r.routerGroups = append(r.routerGroups, routerGroup)
 	return routerGroup
+}
+
+func (r *router) Use(middlewareFunc... MiddlewareFunc) {
+	if len(r.routerGroups) > 0 && r.routerGroups[0].name == "" {
+		r.routerGroups[0].Use(middlewareFunc...)
+	} else {
+		log.Fatal("Root group not initialized")
+	}
+}
+
+func (r *router) Handle(w http.ResponseWriter, req *http.Request, h HandlerFunc) {
+	if len(r.routerGroups) > 0 && r.routerGroups[0].name == "" {
+		r.routerGroups[0].Handle(w, req, h)
+	} else {
+		log.Fatal("Root group not initialized")
+	}
 }
 
 func (r *router) Any(name string, handlerFunc HandlerFunc) {

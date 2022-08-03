@@ -31,12 +31,12 @@ func (e *Engine) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		if node != nil {
 			handlerFunc, ok := rg.handlerFuncMap[uriPattern][ANY]
 			if ok {
-				handlerFunc(w, r)
+				rg.Handle(w, r, handlerFunc)
 				return
 			}
 			handlerFunc, ok = rg.handlerFuncMap[uriPattern][method]
 			if ok {
-				handlerFunc(w, r)
+				rg.Handle(w, r, handlerFunc)
 				return
 			}
 			w.WriteHeader(http.StatusMethodNotAllowed)

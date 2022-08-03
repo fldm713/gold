@@ -9,6 +9,13 @@ import (
 
 func main() {
 	engine := gold.New()
+	engine.Use(func(next gold.HandlerFunc) gold.HandlerFunc{
+		return func(w http.ResponseWriter, r *http.Request) {
+			fmt.Fprintf(w, "Pre middleware\n")
+			next(w, r)
+			fmt.Fprintf(w, "Post middleware\n")
+		}
+	})
 	engine.Get("/", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "Root: Welcome to the golden era!\n")
 	})

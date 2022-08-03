@@ -9,13 +9,27 @@ const ANY string = "ANY"
 
 type HandlerFunc func(w http.ResponseWriter, r *http.Request)
 
+type MiddlewareFunc func(handlerFunc HandlerFunc) HandlerFunc
+
 type routerGroup struct {
 	name           string
 	handlerFuncMap map[string]map[string]HandlerFunc
 	trieNode       *trieNode
+	middlewares    []MiddlewareFunc
 }
 
-func (rg *routerGroup) Add(routeName string, method string, handlerFunc HandlerFunc) {
+func (rg *routerGroup) Use(middlewareFunc ...MiddlewareFunc) {
+	rg.middlewares = append(rg.middlewares, middlewareFunc...)
+}
+
+func (rg *routerGroup) Handle(w http.ResponseWriter, r *http.Request, h HandlerFunc) {
+	for _, middleWareFunc := range rg.middlewares {
+		h = middleWareFunc(h)
+	}
+	h(w, r)
+}
+
+func (rg *routerGroup) Add(routeName string, method string, handlerFunc HandlerFunc, middlewareFunc ...MiddlewareFunc) {
 	var uriPattern string
 	if rg.name == "" {
 		uriPattern = routeName

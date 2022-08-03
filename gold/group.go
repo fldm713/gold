@@ -12,24 +12,28 @@ type HandlerFunc func(w http.ResponseWriter, r *http.Request)
 type MiddlewareFunc func(handlerFunc HandlerFunc) HandlerFunc
 
 type routerGroup struct {
-	name           string
-	handlerFuncMap map[string]map[string]HandlerFunc
-	trieNode       *trieNode
-	middlewares    []MiddlewareFunc
+	name              string
+	handlerFuncMap    map[string]map[string]HandlerFunc
+	trieNode          *trieNode
+	middlewares       []MiddlewareFunc
+	midderwareFuncMap map[string]map[string][]MiddlewareFunc
 }
 
-func (rg *routerGroup) Use(middlewareFunc ...MiddlewareFunc) {
-	rg.middlewares = append(rg.middlewares, middlewareFunc...)
+func (rg *routerGroup) Use(middleWareFuncs ...MiddlewareFunc) {
+	rg.middlewares = append(rg.middlewares, middleWareFuncs...)
 }
 
-func (rg *routerGroup) Handle(w http.ResponseWriter, r *http.Request, h HandlerFunc) {
-	for _, middleWareFunc := range rg.middlewares {
-		h = middleWareFunc(h)
+func (rg *routerGroup) Handle(w http.ResponseWriter, r *http.Request, h HandlerFunc, middlewareFuncs ...MiddlewareFunc) {
+	for _, m := range rg.middlewares {
+		h = m(h)
+	}
+	for _, m := range middlewareFuncs {
+		h = m(h)
 	}
 	h(w, r)
 }
 
-func (rg *routerGroup) Add(routeName string, method string, handlerFunc HandlerFunc, middlewareFunc ...MiddlewareFunc) {
+func (rg *routerGroup) Add(routeName string, method string, handlerFunc HandlerFunc, middlewareFuncs ...MiddlewareFunc) {
 	var uriPattern string
 	if rg.name == "" {
 		uriPattern = routeName
@@ -38,46 +42,48 @@ func (rg *routerGroup) Add(routeName string, method string, handlerFunc HandlerF
 	}
 	if _, ok := rg.handlerFuncMap[uriPattern]; !ok {
 		rg.handlerFuncMap[uriPattern] = make(map[string]HandlerFunc)
+		rg.midderwareFuncMap[uriPattern] = make(map[string][]MiddlewareFunc)
 	}
 	if _, ok := rg.handlerFuncMap[uriPattern][method]; ok {
 		log.Fatalf("Repeated, uri %s, method: %s\n", uriPattern, method)
 	}
 	rg.handlerFuncMap[uriPattern][method] = handlerFunc
+	rg.midderwareFuncMap[uriPattern][method] = append(rg.midderwareFuncMap[uriPattern][method], middlewareFuncs...)
 	rg.trieNode.Insert(uriPattern)
 }
 
-func (rg *routerGroup) Any(routeName string, handlerFunc HandlerFunc) {
-	rg.Add(routeName, ANY, handlerFunc)
+func (rg *routerGroup) Any(routeName string, handlerFunc HandlerFunc, middlewareFuncs ...MiddlewareFunc) {
+	rg.Add(routeName, ANY, handlerFunc, middlewareFuncs...)
 }
 
-func (rg *routerGroup) Get(routeName string, handlerFunc HandlerFunc) {
-	rg.Add(routeName, http.MethodGet, handlerFunc)
+func (rg *routerGroup) Get(routeName string, handlerFunc HandlerFunc, middlewareFuncs ...MiddlewareFunc) {
+	rg.Add(routeName, http.MethodGet, handlerFunc, middlewareFuncs...)
 }
 
-func (rg *routerGroup) Head(routeName string, handlerFunc HandlerFunc) {
-	rg.Add(routeName, http.MethodHead, handlerFunc)
+func (rg *routerGroup) Head(routeName string, handlerFunc HandlerFunc, middlewareFuncs ...MiddlewareFunc) {
+	rg.Add(routeName, http.MethodHead, handlerFunc, middlewareFuncs...)
 }
 
-func (rg *routerGroup) Post(routeName string, handlerFunc HandlerFunc) {
-	rg.Add(routeName, http.MethodPost, handlerFunc)
+func (rg *routerGroup) Post(routeName string, handlerFunc HandlerFunc, middlewareFuncs ...MiddlewareFunc) {
+	rg.Add(routeName, http.MethodPost, handlerFunc, middlewareFuncs...)
 }
 
-func (rg *routerGroup) Put(routeName string, handlerFunc HandlerFunc) {
-	rg.Add(routeName, http.MethodPut, handlerFunc)
+func (rg *routerGroup) Put(routeName string, handlerFunc HandlerFunc, middlewareFuncs ...MiddlewareFunc) {
+	rg.Add(routeName, http.MethodPut, handlerFunc, middlewareFuncs...)
 }
 
-func (rg *routerGroup) Patch(routeName string, handlerFunc HandlerFunc) {
-	rg.Add(routeName, http.MethodPatch, handlerFunc)
+func (rg *routerGroup) Patch(routeName string, handlerFunc HandlerFunc, middlewareFuncs ...MiddlewareFunc) {
+	rg.Add(routeName, http.MethodPatch, handlerFunc, middlewareFuncs...)
 }
 
-func (rg *routerGroup) Delete(routeName string, handlerFunc HandlerFunc) {
-	rg.Add(routeName, http.MethodDelete, handlerFunc)
+func (rg *routerGroup) Delete(routeName string, handlerFunc HandlerFunc, middlewareFuncs ...MiddlewareFunc) {
+	rg.Add(routeName, http.MethodDelete, handlerFunc, middlewareFuncs...)
 }
 
-func (rg *routerGroup) Trace(routeName string, handlerFunc HandlerFunc) {
-	rg.Add(routeName, http.MethodTrace, handlerFunc)
+func (rg *routerGroup) Trace(routeName string, handlerFunc HandlerFunc, middlewareFuncs ...MiddlewareFunc) {
+	rg.Add(routeName, http.MethodTrace, handlerFunc, middlewareFuncs...)
 }
 
-func (rg *routerGroup) Options(routeName string, handlerFunc HandlerFunc) {
-	rg.Add(routeName, http.MethodOptions, handlerFunc)
+func (rg *routerGroup) Options(routeName string, handlerFunc HandlerFunc, middlewareFuncs ...MiddlewareFunc) {
+	rg.Add(routeName, http.MethodOptions, handlerFunc, middlewareFuncs...)
 }

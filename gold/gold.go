@@ -15,9 +15,10 @@ func New() *Engine {
 		router: router{
 			routerGroups: []*routerGroup{
 				{
-					name:           "",
-					handlerFuncMap: make(map[string]map[string]HandlerFunc),
-					trieNode:       &trieNode{name: "", children: make([]*trieNode, 0), pattern: ""},
+					name:              "",
+					handlerFuncMap:    make(map[string]map[string]HandlerFunc),
+					midderwareFuncMap: make(map[string]map[string][]MiddlewareFunc),
+					trieNode:          &trieNode{name: "", children: make([]*trieNode, 0), pattern: ""},
 				},
 			},
 		},
@@ -31,17 +32,19 @@ func (e *Engine) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		if node != nil {
 			handlerFunc, ok := rg.handlerFuncMap[uriPattern][ANY]
 			if ok {
-				rg.Handle(w, r, handlerFunc)
+				middlewareFuncs := rg.midderwareFuncMap[uriPattern][ANY]
+				rg.Handle(w, r, handlerFunc, middlewareFuncs...)
 				return
 			}
 			handlerFunc, ok = rg.handlerFuncMap[uriPattern][method]
 			if ok {
-				rg.Handle(w, r, handlerFunc)
+				middlewareFuncs := rg.midderwareFuncMap[uriPattern][method]
+				rg.Handle(w, r, handlerFunc, middlewareFuncs...)
 				return
 			}
 			w.WriteHeader(http.StatusMethodNotAllowed)
 			fmt.Fprintf(w, r.RequestURI+" "+method+" is not allowed\n")
-			return	
+			return
 		}
 	}
 	w.WriteHeader(http.StatusNotFound)

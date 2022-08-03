@@ -11,9 +11,10 @@ type router struct {
 
 func (r *router) Group(name string) *routerGroup {
 	routerGroup := &routerGroup{
-		name:           name,
-		handlerFuncMap: make(map[string]map[string]HandlerFunc),
-		trieNode:       &trieNode{name: "", children: make([]*trieNode, 0), pattern: ""},
+		name:              name,
+		handlerFuncMap:    make(map[string]map[string]HandlerFunc),
+		midderwareFuncMap: make(map[string]map[string][]MiddlewareFunc),
+		trieNode:          &trieNode{name: "", children: make([]*trieNode, 0), pattern: ""},
 	}
 	r.routerGroups = append(r.routerGroups, routerGroup)
 	return routerGroup

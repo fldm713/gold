@@ -8,6 +8,7 @@ import (
 
 type Engine struct {
 	router
+	Renderer
 }
 
 func New() *Engine {
@@ -30,16 +31,27 @@ func (e *Engine) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	for _, rg := range e.routerGroups {
 		node, uriPattern := rg.trieNode.Find(r.RequestURI)
 		if node != nil {
+			c := &Context{
+				W: w,
+				R: r,
+				e: e,
+			}
 			handlerFunc, ok := rg.handlerFuncMap[uriPattern][ANY]
 			if ok {
 				middlewareFuncs := rg.midderwareFuncMap[uriPattern][ANY]
-				rg.Handle(w, r, handlerFunc, middlewareFuncs...)
+				err := rg.Handle(c, handlerFunc, middlewareFuncs...)
+				if err != nil {
+					log.Fatal(err)
+				}
 				return
 			}
 			handlerFunc, ok = rg.handlerFuncMap[uriPattern][method]
 			if ok {
 				middlewareFuncs := rg.midderwareFuncMap[uriPattern][method]
-				rg.Handle(w, r, handlerFunc, middlewareFuncs...)
+				err := rg.Handle(c, handlerFunc, middlewareFuncs...)
+				if err != nil {
+					log.Fatal(err)
+				}
 				return
 			}
 			w.WriteHeader(http.StatusMethodNotAllowed)

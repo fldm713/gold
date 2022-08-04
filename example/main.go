@@ -1,45 +1,38 @@
 package main
 
 import (
-	"fmt"
+	"io"
 	"net/http"
+	"text/template"
 
 	"github.com/fldm713/gold"
 )
 
-func specific(next gold.HandlerFunc) gold.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "Pre specific middleware\n")
-		next(w, r)
-		fmt.Fprintf(w, "post specific middleware\n")
-	}
+type Template struct {
+    templates *template.Template
+}
+
+func (t *Template) Render(w io.Writer, name string, data interface{}, c *gold.Context) error {
+	return t.templates.ExecuteTemplate(w, name, data)
+}
+
+func Hello(c *gold.Context) error {
+	return c.Render(http.StatusOK, "hello", "World")
 }
 
 func main() {
 	engine := gold.New()
-	engine.Use(func(next gold.HandlerFunc) gold.HandlerFunc{
-		return func(w http.ResponseWriter, r *http.Request) {
-			fmt.Fprintf(w, "Pre middleware\n")
-			next(w, r)
-			fmt.Fprintf(w, "Post middleware\n")
-		}
+	t := &Template{
+		templates: template.Must(template.ParseGlob("public/views/*.html")),
+	}
+	engine.Renderer = t
+
+	engine.Get("/", func(c *gold.Context) error {
+		return c.HTML(http.StatusOK, "<h1>html</h1><br>")
 	})
-	engine.Get("/", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "Root: Welcome to the golden era!\n")
-	})
-	engine.Get("/*", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "Match all: Welcome to the golden era!\n")
-	})
-	engine.Get("/:param", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "Param: Welcome to the golden era!\n")
-	})
-	engine.Get("/hello", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "Static: Welcome to the golden era!\n")
-	})
-	userGroup := engine.Group("users")
-	userGroup.Post("/hello", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "User: Welcome to the golden era!\n")
-	}, specific)
+
+	engine.Get("/hello", Hello)
+	
 	engine.Run()
 
 }

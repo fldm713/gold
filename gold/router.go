@@ -2,7 +2,6 @@ package gold
 
 import (
 	"log"
-	"net/http"
 )
 
 type router struct {
@@ -28,9 +27,9 @@ func (r *router) Use(middlewareFunc... MiddlewareFunc) {
 	}
 }
 
-func (r *router) Handle(w http.ResponseWriter, req *http.Request, h HandlerFunc) {
+func (r *router) Handle(c *Context, h HandlerFunc) {
 	if len(r.routerGroups) > 0 && r.routerGroups[0].name == "" {
-		r.routerGroups[0].Handle(w, req, h)
+		r.routerGroups[0].Handle(c, h)
 	} else {
 		log.Fatal("Root group not initialized")
 	}

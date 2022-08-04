@@ -7,7 +7,7 @@ import (
 
 const ANY string = "ANY"
 
-type HandlerFunc func(w http.ResponseWriter, r *http.Request)
+type HandlerFunc func(c *Context) error
 
 type MiddlewareFunc func(handlerFunc HandlerFunc) HandlerFunc
 
@@ -23,14 +23,14 @@ func (rg *routerGroup) Use(middleWareFuncs ...MiddlewareFunc) {
 	rg.middlewares = append(rg.middlewares, middleWareFuncs...)
 }
 
-func (rg *routerGroup) Handle(w http.ResponseWriter, r *http.Request, h HandlerFunc, middlewareFuncs ...MiddlewareFunc) {
+func (rg *routerGroup) Handle(c *Context, h HandlerFunc, middlewareFuncs ...MiddlewareFunc) error {
 	for _, m := range rg.middlewares {
 		h = m(h)
 	}
 	for _, m := range middlewareFuncs {
 		h = m(h)
 	}
-	h(w, r)
+	return h(c)
 }
 
 func (rg *routerGroup) Add(routeName string, method string, handlerFunc HandlerFunc, middlewareFuncs ...MiddlewareFunc) {

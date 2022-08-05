@@ -40,6 +40,12 @@ func main() {
 	engine.Get("/xml", func(c *gold.Context) error {
 		return c.XML(http.StatusOK, user)
 	})
+	engine.Get("/doc", func(c *gold.Context) error {
+		return c.File(http.StatusOK, "./files/doc.txt")
+	})
+	engine.Get("/download", func(c *gold.Context) error {
+		return c.Attachment(http.StatusOK, "./files/software.dmg", "software.dmg")
+	})
 	engine.Run()
 
 }

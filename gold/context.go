@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"encoding/xml"
 	"net/http"
+	"net/url"
 )
 
 type Context struct {
@@ -46,4 +47,19 @@ func (c *Context) XML(code int, data any) error {
 	}
 	_, err = c.W.Write(xmlData)
 	return err
+}
+
+func (c *Context) File(code int, fileName string) error {
+	http.ServeFile(c.W, c.R, fileName)
+	return nil
+}
+
+func (c *Context) Attachment(code int, fileName string, name string) error {
+	if isASCII(name) {
+		c.W.Header().Set("Content-Disposition", `attachment; filename="`+name+`"`)
+	} else {
+		c.W.Header().Set("Content-Disposition", `attachment; filename*=UTf-8''`+url.QueryEscape(name))
+	}
+	http.ServeFile(c.W, c.R, fileName)
+	return nil
 }

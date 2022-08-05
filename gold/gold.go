@@ -39,19 +39,13 @@ func (e *Engine) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			handlerFunc, ok := rg.handlerFuncMap[uriPattern][ANY]
 			if ok {
 				middlewareFuncs := rg.midderwareFuncMap[uriPattern][ANY]
-				err := rg.Handle(c, handlerFunc, middlewareFuncs...)
-				if err != nil {
-					log.Fatal(err)
-				}
+				rg.Handle(c, handlerFunc, middlewareFuncs...)
 				return
 			}
 			handlerFunc, ok = rg.handlerFuncMap[uriPattern][method]
 			if ok {
 				middlewareFuncs := rg.midderwareFuncMap[uriPattern][method]
-				err := rg.Handle(c, handlerFunc, middlewareFuncs...)
-				if err != nil {
-					log.Fatal(err)
-				}
+				rg.Handle(c, handlerFunc, middlewareFuncs...)
 				return
 			}
 			w.WriteHeader(http.StatusMethodNotAllowed)

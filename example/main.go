@@ -9,7 +9,7 @@ import (
 )
 
 type Template struct {
-    templates *template.Template
+	templates *template.Template
 }
 
 func (t *Template) Render(w io.Writer, name string, data interface{}, c *gold.Context) error {
@@ -20,19 +20,26 @@ func Hello(c *gold.Context) error {
 	return c.Render(http.StatusOK, "hello", "World")
 }
 
+type User struct {
+	Name string `json:"name" xml:"name"`
+}
+
 func main() {
 	engine := gold.New()
-	t := &Template{
-		templates: template.Must(template.ParseGlob("public/views/*.html")),
+	// user := &struct {
+	// 	Name string `xml:"name"`
+	// } {
+	// 	Name: "User1",
+	// }
+	user := &User{
+		Name: "User1",
 	}
-	engine.Renderer = t
-
-	engine.Get("/", func(c *gold.Context) error {
-		return c.HTML(http.StatusOK, "<h1>html</h1><br>")
+	engine.Get("/json", func(c *gold.Context) error {
+		return c.JSON(http.StatusOK, user)
 	})
-
-	engine.Get("/hello", Hello)
-	
+	engine.Get("/xml", func(c *gold.Context) error {
+		return c.XML(http.StatusOK, user)
+	})
 	engine.Run()
 
 }

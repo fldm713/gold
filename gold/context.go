@@ -1,6 +1,8 @@
 package gold
 
 import (
+	"encoding/json"
+	"encoding/xml"
 	"net/http"
 )
 
@@ -21,5 +23,27 @@ func (c *Context) Render(code int, name string, data any) error {
 	c.W.Header().Set("Content-Type", "text/html; charset=UTF-8")
 	c.W.WriteHeader(code)
 	err := c.e.Render(c.W, name, data, c)		
+	return err
+}
+
+func (c *Context) JSON(code int, data any) error {
+	c.W.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	c.W.WriteHeader(code)
+	jsonData, err := json.Marshal(data)
+	if err != nil {
+		return err
+	}
+	_, err = c.W.Write(jsonData)
+	return err
+}
+
+func (c *Context) XML(code int, data any) error {
+	c.W.Header().Set("Content-Type", "application/xml; charset=UTF-8")
+	c.W.WriteHeader(code)
+	xmlData, err := xml.Marshal(data)
+	if err != nil {
+		return err
+	}
+	_, err = c.W.Write(xmlData)
 	return err
 }

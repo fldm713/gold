@@ -16,8 +16,8 @@ func (t *Template) Render(w io.Writer, name string, data interface{}, c *gold.Co
 	return t.templates.ExecuteTemplate(w, name, data)
 }
 
-func Hello(c *gold.Context) error {
-	return c.Render(http.StatusOK, "hello", "World")
+func Hello(c *gold.Context) {
+	c.Render(http.StatusOK, "hello", "World")
 }
 
 type User struct {
@@ -34,17 +34,17 @@ func main() {
 	user := &User{
 		Name: "User1",
 	}
-	engine.Get("/json", func(c *gold.Context) error {
-		return c.JSON(http.StatusOK, user)
+	engine.Get("/json", func(c *gold.Context) {
+		c.JSON(http.StatusOK, user)
 	})
-	engine.Get("/xml", func(c *gold.Context) error {
-		return c.XML(http.StatusOK, user)
+	engine.Get("/xml", func(c *gold.Context) {
+		c.XML(http.StatusOK, user)
 	})
-	engine.Get("/doc", func(c *gold.Context) error {
-		return c.File(http.StatusOK, "./files/doc.txt")
+	engine.Get("/doc", func(c *gold.Context) {
+		c.File(http.StatusOK, "./files/doc.txt")
 	})
-	engine.Get("/download", func(c *gold.Context) error {
-		return c.Attachment(http.StatusOK, "./files/software.dmg", "software.dmg")
+	engine.Get("/download", func(c *gold.Context) {
+		c.Attachment(http.StatusOK, "./files/software.dmg", "software.dmg")
 	})
 	engine.Run()
 

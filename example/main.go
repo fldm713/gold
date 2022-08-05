@@ -16,8 +16,8 @@ func (t *Template) Render(w io.Writer, name string, data interface{}, c *gold.Co
 	return t.templates.ExecuteTemplate(w, name, data)
 }
 
-func Hello(c *gold.Context) error {
-	return c.Render(http.StatusOK, "hello", "World")
+func Hello(c *gold.Context) {
+	c.Render(http.StatusOK, "hello", "World")
 }
 
 func main() {
@@ -27,12 +27,11 @@ func main() {
 	}
 	engine.Renderer = t
 
-	engine.Get("/", func(c *gold.Context) error {
-		return c.HTML(http.StatusOK, "<h1>html</h1><br>")
+	engine.Get("/", func(c *gold.Context) {
+		c.HTML(http.StatusOK, "<h1>html</h1><br>")
 	})
 
 	engine.Get("/hello", Hello)
 	
 	engine.Run()
-
 }

@@ -7,7 +7,7 @@ import (
 
 const ANY string = "ANY"
 
-type HandlerFunc func(c *Context) error
+type HandlerFunc func(c *Context)
 
 type MiddlewareFunc func(handlerFunc HandlerFunc) HandlerFunc
 
@@ -23,14 +23,14 @@ func (rg *routerGroup) Use(middleWareFuncs ...MiddlewareFunc) {
 	rg.middlewares = append(rg.middlewares, middleWareFuncs...)
 }
 
-func (rg *routerGroup) Handle(c *Context, h HandlerFunc, middlewareFuncs ...MiddlewareFunc) error {
+func (rg *routerGroup) Handle(c *Context, h HandlerFunc, middlewareFuncs ...MiddlewareFunc) {
 	for _, m := range rg.middlewares {
 		h = m(h)
 	}
 	for _, m := range middlewareFuncs {
 		h = m(h)
 	}
-	return h(c)
+	h(c)
 }
 
 func (rg *routerGroup) Add(routeName string, method string, handlerFunc HandlerFunc, middlewareFuncs ...MiddlewareFunc) {

@@ -37,14 +37,8 @@ func main() {
 	engine.Get("/json", func(c *gold.Context) {
 		c.JSON(http.StatusOK, user)
 	})
-	engine.Get("/xml", func(c *gold.Context) {
-		c.XML(http.StatusOK, user)
-	})
-	engine.Get("/doc", func(c *gold.Context) {
-		c.File(http.StatusOK, "./files/doc.txt")
-	})
-	engine.Get("/download", func(c *gold.Context) {
-		c.Attachment(http.StatusOK, "./files/software.dmg", "software.dmg")
+	engine.Get("/redirect", func(c *gold.Context) {
+		c.Redirect(http.StatusFound, "/json")
 	})
 	engine.Run()
 

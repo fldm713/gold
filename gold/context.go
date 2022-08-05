@@ -70,3 +70,7 @@ func (c *Context) Attachment(code int, fileName string, name string) {
 	}
 	http.ServeFile(c.W, c.R, fileName)
 }
+
+func (c *Context) Redirect(code int, url string) {
+	http.Redirect(c.W, c.R, url, code)
+}

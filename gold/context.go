@@ -10,9 +10,10 @@ import (
 )
 
 type Context struct {
-	W http.ResponseWriter
-	R *http.Request
-	e *Engine
+	W          http.ResponseWriter
+	R          *http.Request
+	e          *Engine
+	queryCache url.Values
 }
 
 func (c *Context) HTML(code int, html string) {
@@ -27,7 +28,7 @@ func (c *Context) HTML(code int, html string) {
 func (c *Context) Render(code int, name string, data any) {
 	c.W.Header().Set("Content-Type", "text/html; charset=UTF-8")
 	c.W.WriteHeader(code)
-	err := c.e.Render(c.W, name, data, c)		
+	err := c.e.Render(c.W, name, data, c)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -83,8 +84,29 @@ func (c *Context) String(code int, format string, values ...any) {
 		_, err := fmt.Fprintf(c.W, format, values...)
 		if err != nil {
 			log.Fatal(err)
-		} else {
-			c.W.Write([]byte(format))
 		}
-	} 
+	} else {
+		_, err := c.W.Write([]byte(format))
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+}
+
+func (c *Context) initQueryCache() {
+	if c.R != nil {
+		c.queryCache = c.R.URL.Query()
+	} else {
+		c.queryCache = url.Values{}
+	}
+}
+
+func (c *Context) QueryParam(name string) string {
+	c.initQueryCache()
+	return c.queryCache.Get(name)
+}
+
+func (c *Context) QueryParams() url.Values {
+	c.initQueryCache()
+	return c.queryCache
 }

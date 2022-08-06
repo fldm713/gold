@@ -3,6 +3,7 @@ package gold
 import (
 	"encoding/json"
 	"encoding/xml"
+	"fmt"
 	"log"
 	"net/http"
 	"net/url"
@@ -73,4 +74,17 @@ func (c *Context) Attachment(code int, fileName string, name string) {
 
 func (c *Context) Redirect(code int, url string) {
 	http.Redirect(c.W, c.R, url, code)
+}
+
+func (c *Context) String(code int, format string, values ...any) {
+	c.W.Header().Set("Content-Type", "text/plain; charset=UTF-8")
+	c.W.WriteHeader(code)
+	if len(values) > 0 {
+		_, err := fmt.Fprintf(c.W, format, values...)
+		if err != nil {
+			log.Fatal(err)
+		} else {
+			c.W.Write([]byte(format))
+		}
+	} 
 }

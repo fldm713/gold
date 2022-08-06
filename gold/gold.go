@@ -4,15 +4,17 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"sync"
 )
 
 type Engine struct {
 	router
 	Renderer
+	pool sync.Pool
 }
 
 func New() *Engine {
-	return &Engine{
+	engine := &Engine{
 		router: router{
 			routerGroups: []*routerGroup{
 				{
@@ -24,18 +26,25 @@ func New() *Engine {
 			},
 		},
 	}
+	engine.pool.New = func() any {
+		return engine.allocateContext()
+	}
+	return engine
+}
+
+func (e *Engine) allocateContext() any {
+	return &Context{e: e}
 }
 
 func (e *Engine) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	c := e.pool.Get().(*Context)
+	c.W = w
+	c.R = r
+	e.pool.Put(c)
 	method := r.Method
 	for _, rg := range e.routerGroups {
 		node, uriPattern := rg.trieNode.Find(r.RequestURI)
 		if node != nil {
-			c := &Context{
-				W: w,
-				R: r,
-				e: e,
-			}
 			handlerFunc, ok := rg.handlerFuncMap[uriPattern][ANY]
 			if ok {
 				middlewareFuncs := rg.midderwareFuncMap[uriPattern][ANY]

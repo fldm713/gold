@@ -1,44 +1,30 @@
 package main
 
 import (
-	"io"
+	"fmt"
 	"net/http"
-	"text/template"
 
 	"github.com/fldm713/gold"
 )
 
-type Template struct {
-	templates *template.Template
-}
-
-func (t *Template) Render(w io.Writer, name string, data interface{}, c *gold.Context) error {
-	return t.templates.ExecuteTemplate(w, name, data)
-}
-
-func Hello(c *gold.Context) {
-	c.Render(http.StatusOK, "hello", "World")
-}
-
-type User struct {
-	Name string `json:"name" xml:"name"`
-}
-
 func main() {
 	engine := gold.New()
-	// user := &struct {
-	// 	Name string `xml:"name"`
-	// } {
-	// 	Name: "User1",
-	// }
-	user := &User{
-		Name: "User1",
-	}
-	engine.Get("/json", func(c *gold.Context) {
-		c.JSON(http.StatusOK, user)
+	engine.Get("/hello", func(c *gold.Context) {
+		id := c.QueryParam("id")
+		c.String(http.StatusOK, id)
 	})
-	engine.Get("/redirect", func(c *gold.Context) {
-		c.Redirect(http.StatusFound, "/json")
+	engine.Get("/user", func(c *gold.Context) {
+		c.String(http.StatusOK, "Query parameters: %#v\n", c.QueryParams())
+		fmt.Printf("%v", c.QueryParams())
+	})
+	engine.Get("/user/:id", func(c *gold.Context) {
+		c.String(http.StatusOK, "id: %s", c.PathParam("id"))
+	})
+	// engine.Get("/order/:name/info/:id", func(c *gold.Context) {
+	// 	c.String(http.StatusOK, "Order name: %s, info id %s", c.PathParam("name"), c.PathParam("id"))
+	// })
+	engine.Get("/order/:name/info/:id", func(c *gold.Context) {
+		c.String(http.StatusOK, "Path parameters %v", c.PathParams())
 	})
 	engine.Run()
 

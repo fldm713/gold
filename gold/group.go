@@ -34,22 +34,22 @@ func (rg *routerGroup) Handle(c *Context, h HandlerFunc, middlewareFuncs ...Midd
 }
 
 func (rg *routerGroup) Add(routeName string, method string, handlerFunc HandlerFunc, middlewareFuncs ...MiddlewareFunc) {
-	var uriPattern string
+	var urlPattern string
 	if rg.name == "" {
-		uriPattern = routeName
+		urlPattern = routeName
 	} else {
-		uriPattern = "/" + rg.name + routeName
+		urlPattern = "/" + rg.name + routeName
 	}
-	if _, ok := rg.handlerFuncMap[uriPattern]; !ok {
-		rg.handlerFuncMap[uriPattern] = make(map[string]HandlerFunc)
-		rg.midderwareFuncMap[uriPattern] = make(map[string][]MiddlewareFunc)
+	if _, ok := rg.handlerFuncMap[urlPattern]; !ok {
+		rg.handlerFuncMap[urlPattern] = make(map[string]HandlerFunc)
+		rg.midderwareFuncMap[urlPattern] = make(map[string][]MiddlewareFunc)
 	}
-	if _, ok := rg.handlerFuncMap[uriPattern][method]; ok {
-		log.Fatalf("Repeated, uri %s, method: %s\n", uriPattern, method)
+	if _, ok := rg.handlerFuncMap[urlPattern][method]; ok {
+		log.Fatalf("Repeated, url %s, method: %s\n", urlPattern, method)
 	}
-	rg.handlerFuncMap[uriPattern][method] = handlerFunc
-	rg.midderwareFuncMap[uriPattern][method] = append(rg.midderwareFuncMap[uriPattern][method], middlewareFuncs...)
-	rg.trieNode.Insert(uriPattern)
+	rg.handlerFuncMap[urlPattern][method] = handlerFunc
+	rg.midderwareFuncMap[urlPattern][method] = append(rg.midderwareFuncMap[urlPattern][method], middlewareFuncs...)
+	rg.trieNode.Insert(urlPattern)
 }
 
 func (rg *routerGroup) Any(routeName string, handlerFunc HandlerFunc, middlewareFuncs ...MiddlewareFunc) {

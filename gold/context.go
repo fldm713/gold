@@ -3,17 +3,23 @@ package gold
 import (
 	"encoding/json"
 	"encoding/xml"
+	"errors"
 	"fmt"
 	"log"
+	"mime/multipart"
 	"net/http"
 	"net/url"
 )
+
+
+const defaultMaxMemory int64 = 32 << 20 // 32 MB
 
 type Context struct {
 	W          http.ResponseWriter
 	R          *http.Request
 	e          *Engine
 	queryCache url.Values
+	formCache  url.Values
 }
 
 func (c *Context) HTML(code int, html string) {
@@ -109,4 +115,36 @@ func (c *Context) QueryParam(name string) string {
 func (c *Context) QueryParams() url.Values {
 	c.initQueryCache()
 	return c.queryCache
+}
+
+func (c *Context) initPostFormCache() {
+	if c.R != nil {
+		if err := c.R.ParseMultipartForm(defaultMaxMemory); err != nil {
+			if !errors.Is(err, http.ErrNotMultipart) {
+				log.Fatal(err) 
+			}
+		}
+		c.formCache = c.R.PostForm
+	} else {
+		c.formCache = url.Values{}
+	}
+}
+
+func (c *Context) FormValue(name string) string {
+	c.initPostFormCache()
+	return c.formCache.Get(name)
+}
+
+func (c *Context) FormValues() url.Values {
+	c.initPostFormCache()
+	return c.formCache
+}
+
+func (c *Context) FormFile(name string) *multipart.FileHeader {
+		file, header, err := c.R.FormFile(name)
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer file.Close()
+		return header
 }

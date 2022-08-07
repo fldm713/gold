@@ -11,7 +11,6 @@ import (
 	"net/url"
 )
 
-
 const defaultMaxMemory int64 = 32 << 20 // 32 MB
 
 type Context struct {
@@ -20,6 +19,7 @@ type Context struct {
 	e          *Engine
 	queryCache url.Values
 	formCache  url.Values
+	pathCache  map[string]string
 }
 
 func (c *Context) HTML(code int, html string) {
@@ -121,7 +121,7 @@ func (c *Context) initPostFormCache() {
 	if c.R != nil {
 		if err := c.R.ParseMultipartForm(defaultMaxMemory); err != nil {
 			if !errors.Is(err, http.ErrNotMultipart) {
-				log.Fatal(err) 
+				log.Fatal(err)
 			}
 		}
 		c.formCache = c.R.PostForm
@@ -141,10 +141,18 @@ func (c *Context) FormValues() url.Values {
 }
 
 func (c *Context) FormFile(name string) *multipart.FileHeader {
-		file, header, err := c.R.FormFile(name)
-		if err != nil {
-			log.Fatal(err)
-		}
-		defer file.Close()
-		return header
+	file, header, err := c.R.FormFile(name)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer file.Close()
+	return header
+}
+
+func (c *Context) PathParam(name string) string {
+	return c.pathCache[name]
+}
+
+func (c *Context) PathParams() map[string]string {
+	return c.pathCache
 }

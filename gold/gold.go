@@ -43,7 +43,8 @@ func (e *Engine) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	e.pool.Put(c)
 	method := r.Method
 	for _, rg := range e.routerGroups {
-		node, urlPattern := rg.trieNode.Find(r.URL.Path)
+		node, urlPattern, params := rg.trieNode.Find(r.URL.Path)
+		c.pathCache = params
 		if node != nil {
 			handlerFunc, ok := rg.handlerFuncMap[urlPattern][ANY]
 			if ok {

@@ -1,37 +1,31 @@
 package main
 
 import (
-	"io"
+	"fmt"
 	"net/http"
-	"text/template"
 
 	"github.com/fldm713/gold"
 )
 
-type Template struct {
-    templates *template.Template
-}
-
-func (t *Template) Render(w io.Writer, name string, data interface{}, c *gold.Context) error {
-	return t.templates.ExecuteTemplate(w, name, data)
-}
-
-func Hello(c *gold.Context) {
-	c.Render(http.StatusOK, "hello", "World")
-}
 
 func main() {
 	engine := gold.New()
-	t := &Template{
-		templates: template.Must(template.ParseGlob("public/views/*.html")),
-	}
-	engine.Renderer = t
-
-	engine.Get("/", func(c *gold.Context) {
-		c.HTML(http.StatusOK, "<h1>html</h1><br>")
+	engine.Get("/hello", func(c *gold.Context) {
+		id := c.QueryParam("id")
+		c.String(http.StatusOK, id)
 	})
-
-	engine.Get("/hello", Hello)
-	
+	engine.Get("/user", func(c *gold.Context) {
+		c.String(http.StatusOK, "Query parameters: %#v\n", c.QueryParams())
+		fmt.Printf("%v", c.QueryParams())
+	})
+	engine.Get("/user/:id", func(c *gold.Context) {
+		c.String(http.StatusOK, "id: %s", c.PathParam("id"))
+	})
+	// engine.Get("/order/:name/info/:id", func(c *gold.Context) {
+	// 	c.String(http.StatusOK, "Order name: %s, info id %s", c.PathParam("name"), c.PathParam("id"))
+	// })
+	engine.Get("/order/:name/info/:id", func(c *gold.Context) {
+		c.String(http.StatusOK, "Path parameters %v", c.PathParams())
+	})
 	engine.Run()
 }

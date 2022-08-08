@@ -41,8 +41,9 @@ func (t *trieNode) Insert(path string) {
 	t = root
 }
 
-func (t *trieNode) Find(path string) (*trieNode, string) {
+func (t *trieNode) Find(path string) (*trieNode, string, map[string]string) {
 	var bestMatched *trieNode
+	var params map[string]string = make(map[string]string)
 	strs := strings.Split(path, "/")
 	for index, name := range strs {
 		if index == 0 {
@@ -54,7 +55,7 @@ func (t *trieNode) Find(path string) (*trieNode, string) {
 			if node.name == name  {
 				bestMatched = node
 				break
-			} else if strings.Contains(node.name, ":") {
+			} else if strings.HasPrefix(node.name, ":") {
 				bestMatched = node
 			} else if node.name == "*" {
 				if bestMatched == nil {
@@ -66,9 +67,13 @@ func (t *trieNode) Find(path string) (*trieNode, string) {
 			break
 		}
 		t = bestMatched
+		if strings.HasPrefix(bestMatched.name, ":") {
+			key := bestMatched.name[1:]
+			params[key] = name
+		}
 		if index == len(strs)-1 {
-			return t, t.pattern
+			return t, t.pattern, params
 		}
 	}
-	return nil, ""
+	return nil, "", params
 }

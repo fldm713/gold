@@ -4,15 +4,17 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"sync"
 )
 
 type Engine struct {
 	router
 	Renderer
+	pool sync.Pool
 }
 
 func New() *Engine {
-	return &Engine{
+	engine := &Engine{
 		router: router{
 			routerGroups: []*routerGroup{
 				{
@@ -24,37 +26,45 @@ func New() *Engine {
 			},
 		},
 	}
+	engine.pool.New = func() any {
+		return engine.allocateContext()
+	}
+	return engine
+}
+
+func (e *Engine) allocateContext() any {
+	return &Context{e: e}
 }
 
 func (e *Engine) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	c := e.pool.Get().(*Context)
+	c.W = w
+	c.R = r
+	e.pool.Put(c)
 	method := r.Method
 	for _, rg := range e.routerGroups {
-		node, uriPattern := rg.trieNode.Find(r.RequestURI)
+		node, urlPattern, params := rg.trieNode.Find(r.URL.Path)
+		c.pathCache = params
 		if node != nil {
-			c := &Context{
-				W: w,
-				R: r,
-				e: e,
-			}
-			handlerFunc, ok := rg.handlerFuncMap[uriPattern][ANY]
+			handlerFunc, ok := rg.handlerFuncMap[urlPattern][ANY]
 			if ok {
-				middlewareFuncs := rg.midderwareFuncMap[uriPattern][ANY]
+				middlewareFuncs := rg.midderwareFuncMap[urlPattern][ANY]
 				rg.Handle(c, handlerFunc, middlewareFuncs...)
 				return
 			}
-			handlerFunc, ok = rg.handlerFuncMap[uriPattern][method]
+			handlerFunc, ok = rg.handlerFuncMap[urlPattern][method]
 			if ok {
-				middlewareFuncs := rg.midderwareFuncMap[uriPattern][method]
+				middlewareFuncs := rg.midderwareFuncMap[urlPattern][method]
 				rg.Handle(c, handlerFunc, middlewareFuncs...)
 				return
 			}
 			w.WriteHeader(http.StatusMethodNotAllowed)
-			fmt.Fprintf(w, r.RequestURI+" "+method+" is not allowed\n")
+			fmt.Fprintf(w, r.URL.Path+" "+method+" is not allowed\n")
 			return
 		}
 	}
 	w.WriteHeader(http.StatusNotFound)
-	fmt.Fprintf(w, r.RequestURI+" is not found\n")
+	fmt.Fprintf(w, r.URL.Path+" is not found\n")
 }
 
 func (e *Engine) Run() {

@@ -10,6 +10,8 @@ import (
 type Engine struct {
 	router
 	Renderer
+	Binder
+	Validator
 	pool sync.Pool
 }
 
@@ -25,6 +27,7 @@ func New() *Engine {
 				},
 			},
 		},
+		Binder: &DefaultBinder{},
 	}
 	engine.pool.New = func() any {
 		return engine.allocateContext()

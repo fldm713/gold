@@ -156,3 +156,11 @@ func (c *Context) PathParam(name string) string {
 func (c *Context) PathParams() map[string]string {
 	return c.pathCache
 }
+
+func (c *Context) Bind(i any) error {
+	return c.e.Bind(i, c)
+}
+
+func (c *Context) Validate(i any) error {
+	return c.e.Validate(i)
+}
